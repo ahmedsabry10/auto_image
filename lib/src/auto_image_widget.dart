@@ -4,9 +4,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
 import 'models/cache_config.dart';
 import 'models/image_placeholder.dart';
 import 'models/image_shape.dart';
@@ -29,27 +27,27 @@ typedef LoadingBuilder = Widget Function(
   double? progress,
 });
 
-/// OmniImage — one widget for all your image needs.
+/// AutoImage — one widget for all your image needs.
 ///
 /// ```dart
 /// // Network
-/// OmniImage('https://example.com/photo.jpg')
+/// AutoImage('https://example.com/photo.jpg')
 ///
 /// // Asset
-/// OmniImage('assets/images/logo.png')
+/// AutoImage('assets/images/logo.png')
 ///
 /// // File
-/// OmniImage('/storage/emulated/0/DCIM/photo.jpg')
+/// AutoImage('/storage/emulated/0/DCIM/photo.jpg')
 ///
 /// // Base64
-/// OmniImage('data:image/png;base64,iVBORw0KGgo...')
+/// AutoImage('data:image/png;base64,iVBORw0KGgo...')
 ///
 /// // SVG (network or asset)
-/// OmniImage('assets/icons/logo.svg')
-/// OmniImage('https://example.com/icon.svg')
+/// AutoImage('assets/icons/logo.svg')
+/// AutoImage('https://example.com/icon.svg')
 /// ```
-class OmniImage extends StatefulWidget {
-  const OmniImage(
+class AutoImage extends StatefulWidget {
+  const AutoImage(
     this.src, {
     super.key,
     this.width,
@@ -156,10 +154,10 @@ class OmniImage extends StatefulWidget {
   final ProgressCallback? onProgress;
 
   @override
-  State<OmniImage> createState() => _OmniImageState();
+  State<AutoImage> createState() => _AutoImageState();
 }
 
-class _OmniImageState extends State<OmniImage> {
+class _AutoImageState extends State<AutoImage> {
   late ImageSourceType _sourceType;
   Object? _error;
   StackTrace? _stackTrace;
@@ -172,7 +170,7 @@ class _OmniImageState extends State<OmniImage> {
   }
 
   @override
-  void didUpdateWidget(OmniImage oldWidget) {
+  void didUpdateWidget(AutoImage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.src != widget.src) {
       _sourceType = SourceDetector.detect(widget.src);
@@ -180,14 +178,12 @@ class _OmniImageState extends State<OmniImage> {
     }
   }
 
-  /// ✅ FIX: wrap setState in addPostFrameCallback to avoid
-  /// "setState called during build" error
   void _handleError(Object error, StackTrace? stackTrace) {
     widget.onError?.call(error, stackTrace);
     if (!mounted) return;
 
-    // If we're currently building, defer the setState to next frame
-    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {
@@ -214,9 +210,9 @@ class _OmniImageState extends State<OmniImage> {
   @override
   Widget build(BuildContext context) {
     if (_error != null) {
-      final fallback = widget.fallbackBuilder?.call(_error!, _stackTrace, _retry)
-          ?? widget.errorWidget
-          ?? _DefaultErrorWidget(onRetry: _retry);
+      final fallback = widget.fallbackBuilder?.call(_error!, _stackTrace, _retry) ??
+          widget.errorWidget ??
+          _DefaultErrorWidget(onRetry: _retry);
 
       return _applyShape(_applySize(fallback));
     }
@@ -228,8 +224,6 @@ class _OmniImageState extends State<OmniImage> {
 
     return _applyShape(_applyTransform(_applySize(image)));
   }
-
-  // ── Image builders ───────────────────────────────────────────────────────
 
   Widget _buildImage() {
     switch (_sourceType) {
@@ -258,31 +252,21 @@ class _OmniImageState extends State<OmniImage> {
       maxWidthDiskCache: 1000,
       maxHeightDiskCache: 1000,
       cacheKey: widget.cache.key,
-
-      // ✅ FIX: call onProgress via addPostFrameCallback — never during build
       progressIndicatorBuilder: widget.onProgress != null
           ? (context, url, progress) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 widget.onProgress?.call(progress.progress ?? 0);
               });
-              return _buildLoading(
-                context,
-                progress: progress.progress,
-              );
+              return _buildLoading(context, progress: progress.progress);
             }
           : null,
-
       placeholder: widget.onProgress == null
           ? (context, url) => _buildLoading(context)
           : null,
-
-      // ✅ FIX: use _handleError which defers setState safely
       errorWidget: (context, url, error) {
         _handleError(error, null);
-        return _buildLoading(context); // show loading while error state updates
+        return _buildLoading(context);
       },
-
-      // ✅ FIX: call onLoad via addPostFrameCallback — never during build
       imageBuilder: (context, imageProvider) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           widget.onLoad?.call();
@@ -331,9 +315,7 @@ class _OmniImageState extends State<OmniImage> {
 
   Widget _buildBase64Image() {
     try {
-      final base64Str = widget.src.contains(',')
-          ? widget.src.split(',').last
-          : widget.src;
+      final base64Str = widget.src.contains(',') ? widget.src.split(',').last : widget.src;
       final bytes = base64Decode(base64Str);
       return Image.memory(
         bytes,
@@ -348,7 +330,6 @@ class _OmniImageState extends State<OmniImage> {
         },
       );
     } catch (e, s) {
-      // Can't call setState here directly — schedule it
       WidgetsBinding.instance.addPostFrameCallback((_) => _handleError(e, s));
       return _buildLoading(context);
     }
@@ -356,9 +337,8 @@ class _OmniImageState extends State<OmniImage> {
 
   Widget _buildSvgImage() {
     final isNetwork = widget.src.startsWith('http');
-    final colorFilter = widget.svgColor != null
-        ? ColorFilter.mode(widget.svgColor!, BlendMode.srcIn)
-        : null;
+    final colorFilter =
+        widget.svgColor != null ? ColorFilter.mode(widget.svgColor!, BlendMode.srcIn) : null;
 
     if (isNetwork) {
       return SvgPicture.network(
@@ -382,8 +362,6 @@ class _OmniImageState extends State<OmniImage> {
     );
   }
 
-  // ── Placeholder ──────────────────────────────────────────────────────────
-
   Widget _buildLoading(
     BuildContext context, {
     double? progress,
@@ -400,9 +378,7 @@ class _OmniImageState extends State<OmniImage> {
         return ShimmerPlaceholder(
           width: widget.width,
           height: widget.height,
-          borderRadius: widget.shape == ImageShape.roundedRect
-              ? widget.borderRadius
-              : null,
+          borderRadius: widget.shape == ImageShape.roundedRect ? widget.borderRadius : null,
         );
 
       case ImagePlaceholder.blurHash:
@@ -429,8 +405,6 @@ class _OmniImageState extends State<OmniImage> {
         color: widget.placeholderColor ?? const Color(0xFFE0E0E0),
       );
 
-  // ── Fade-in frame builder ────────────────────────────────────────────────
-
   Widget _fadeFrameBuilder(
     BuildContext context,
     Widget child,
@@ -439,7 +413,6 @@ class _OmniImageState extends State<OmniImage> {
   ) {
     if (wasSynchronouslyLoaded || frame != null) {
       if (frame == 0) {
-        // ✅ FIX: defer onLoad callback to avoid setState during build
         WidgetsBinding.instance.addPostFrameCallback((_) {
           widget.onLoad?.call();
         });
@@ -452,8 +425,6 @@ class _OmniImageState extends State<OmniImage> {
       child: child,
     );
   }
-
-  // ── Helpers ──────────────────────────────────────────────────────────────
 
   Widget _applySize(Widget child) {
     if (widget.width == null && widget.height == null) return child;
@@ -474,7 +445,6 @@ class _OmniImageState extends State<OmniImage> {
   }
 }
 
-// ── Default error widget ─────────────────────────────────────────────────────
 class _DefaultErrorWidget extends StatefulWidget {
   const _DefaultErrorWidget({this.onRetry});
   final VoidCallback? onRetry;
@@ -523,7 +493,6 @@ class _DefaultErrorWidgetState extends State<_DefaultErrorWidget>
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Background gradient
                 if (minSide >= 24)
                   Container(
                     decoration: const BoxDecoration(
@@ -534,8 +503,6 @@ class _DefaultErrorWidgetState extends State<_DefaultErrorWidget>
                       ),
                     ),
                   ),
-
-                // Centered content
                 Center(
                   child: AnimatedBuilder(
                     animation: _controller,
@@ -550,8 +517,6 @@ class _DefaultErrorWidgetState extends State<_DefaultErrorWidget>
                     ),
                   ),
                 ),
-
-                // "retry" label — بس لو فيه مساحة
                 if (minSide >= 70)
                   Positioned(
                     bottom: minSide * 0.12,

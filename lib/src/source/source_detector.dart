@@ -1,4 +1,4 @@
-/// Types of image sources omni_image supports
+/// Types of image sources auto_image supports
 enum ImageSourceType {
   /// https:// or http:// URL
   network,

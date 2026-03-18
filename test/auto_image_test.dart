@@ -1,11 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:omni_image/omni_image.dart';
+import 'package:auto_image/auto_image.dart';
 
-import 'package:omni_image/src/source/source_detector.dart';
+import 'package:auto_image/src/source/source_detector.dart';
 
 void main() {
-  // ── SourceDetector tests ─────────────────────────────────────────────────
-
   group('SourceDetector', () {
     test('detects https network URL', () {
       expect(
@@ -78,8 +76,6 @@ void main() {
     });
   });
 
-  // ── RetryConfig tests ────────────────────────────────────────────────────
-
   group('RetryConfig', () {
     test('default values are correct', () {
       const config = RetryConfig();
@@ -109,8 +105,6 @@ void main() {
     });
   });
 
-  // ── CacheConfig tests ────────────────────────────────────────────────────
-
   group('CacheConfig', () {
     test('default is enabled with 7 day expiry', () {
       const config = CacheConfig();
@@ -126,8 +120,6 @@ void main() {
       expect(CacheConfig.longLived.maxAge, const Duration(days: 30));
     });
   });
-
-  // ── ImageTransform tests ────────────────────────────────────────────────
 
   group('ImageTransform', () {
     test('none preset returns null matrix (no transformation)', () {
@@ -149,3 +141,4 @@ void main() {
     });
   });
 }
+
