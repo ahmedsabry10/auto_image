@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -452,33 +453,100 @@ class _OmniImageState extends State<OmniImage> {
 }
 
 // ── Default error widget ─────────────────────────────────────────────────────
-
-class _DefaultErrorWidget extends StatelessWidget {
+class _DefaultErrorWidget extends StatefulWidget {
   const _DefaultErrorWidget({this.onRetry});
   final VoidCallback? onRetry;
 
   @override
+  State<_DefaultErrorWidget> createState() => _DefaultErrorWidgetState();
+}
+
+class _DefaultErrorWidgetState extends State<_DefaultErrorWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  bool _isRetrying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleRetry() {
+    if (_isRetrying) return;
+    setState(() => _isRetrying = true);
+
+    // Spin the icon then call retry
+    _controller.forward(from: 0).then((_) {
+      setState(() => _isRetrying = false);
+      widget.onRetry?.call();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF5F5F5),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            IconData(0xe3ad, fontFamily: 'MaterialIcons'),
-            color: Color(0xFFBDBDBD),
-            size: 32,
-          ),
-          const SizedBox(height: 8),
-          if (onRetry != null)
+      color: const Color(0xFFF8F8F8),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Spinning retry icon
             GestureDetector(
-              onTap: onRetry,
-              child: const Text(
-                'Tap to retry',
-                style: TextStyle(fontSize: 12, color: Color(0xFF9E9E9E)),
+              onTap: _handleRetry,
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  return Transform.rotate(
+                    angle: _controller.value * 6.28, // full 360°
+                    child: child,
+                  );
+                },
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.refresh_rounded,
+                    color: Color(0xFFAAAAAA),
+                    size: 24,
+                  ),
+                ),
               ),
             ),
-        ],
+
+            const SizedBox(height: 8),
+
+            // Small label
+            Text(
+              _isRetrying ? 'Retrying...' : 'Tap to retry',
+              style: const TextStyle(
+                fontSize: 11,
+                color: Color(0xFFBBBBBB),
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

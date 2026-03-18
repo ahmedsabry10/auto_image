@@ -1,7 +1,7 @@
 name: omni_image
 description: A smart Flutter image widget that handles network, asset, file, base64, and SVG images with a unified API, caching, shimmer, BlurHash, and more.
 version: 1.0.0
-homepage: https://github.com/yourname/omni_image
+homepage: https://github.com/ahmedsabry10/omni_image
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
