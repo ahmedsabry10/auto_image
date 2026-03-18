@@ -464,14 +464,13 @@ class _DefaultErrorWidget extends StatefulWidget {
 class _DefaultErrorWidgetState extends State<_DefaultErrorWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  bool _isRetrying = false;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 700),
     );
   }
 
@@ -482,91 +481,75 @@ class _DefaultErrorWidgetState extends State<_DefaultErrorWidget>
   }
 
   void _handleRetry() {
-    if (_isRetrying) return;
-    setState(() => _isRetrying = true);
     _controller.forward(from: 0).then((_) {
-      setState(() => _isRetrying = false);
       widget.onRetry?.call();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return ClipRect( // ✅ يمنع أي overflow يطلع برا الحدود
-      child: Container(
-        color: const Color(0xFFF8F8F8),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final w = constraints.maxWidth;
-            final h = constraints.maxHeight;
-            final minSide = w < h ? w : h; // أصغر بعد
+    return ClipRect(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final size = constraints.biggest;
+          final minSide = size.shortestSide;
+          final iconSize = (minSide * 0.35).clamp(8.0, 28.0);
 
-            // حجم الأيقونة = 60% من أصغر بعد، بحد أقصى 24
-            final iconSize = (minSide * 0.6).clamp(4.0, 24.0);
-
-            // نعرض الـ container المدور بس لو فيه مساحة كافية
-            final showCircle = minSide >= 32;
-
-            // نعرض النص بس لو فيه مساحة كافية
-            final showText = w >= 60 && h >= 72;
-
-            return GestureDetector(
-              onTap: _handleRetry,
-              behavior: HitTestBehavior.opaque,
-              child: Center(
-                child: AnimatedBuilder(
-                  animation: _controller,
-                  builder: (context, child) => Transform.rotate(
-                    angle: _controller.value * 6.28,
-                    child: child,
+          return GestureDetector(
+            onTap: _handleRetry,
+            behavior: HitTestBehavior.opaque,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Background gradient
+                if (minSide >= 24)
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFF9F9F9), Color(0xFFEFEFEF)],
+                      ),
+                    ),
                   ),
-                  child: showCircle
-                      ? Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: minSide * 0.7,
-                              height: minSide * 0.7,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.08),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Icon(
-                                Icons.refresh_rounded,
-                                color: const Color(0xFFAAAAAA),
-                                size: iconSize,
-                              ),
-                            ),
-                            if (showText) ...[
-                              const SizedBox(height: 6),
-                              Text(
-                                _isRetrying ? 'Retrying...' : 'Tap to retry',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFFBBBBBB),
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                            ],
-                          ],
-                        )
-                      : Icon( // صغير جداً — icon بس بدون أي wrapper
-                          Icons.refresh_rounded,
-                          color: const Color(0xFFAAAAAA),
-                          size: iconSize,
-                        ),
+
+                // Centered content
+                Center(
+                  child: AnimatedBuilder(
+                    animation: _controller,
+                    builder: (_, child) => Transform.rotate(
+                      angle: _controller.value * 6.28318,
+                      child: child,
+                    ),
+                    child: Icon(
+                      Icons.refresh_rounded,
+                      size: iconSize,
+                      color: const Color(0xFFC0C0C0),
+                    ),
+                  ),
                 ),
-              ),
-            );
-          },
-        ),
+
+                // "retry" label — بس لو فيه مساحة
+                if (minSide >= 70)
+                  Positioned(
+                    bottom: minSide * 0.12,
+                    left: 0,
+                    right: 0,
+                    child: Text(
+                      'tap to retry',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: (minSide * 0.1).clamp(9.0, 11.0),
+                        color: const Color(0xFFCCCCCC),
+                        letterSpacing: 0.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
