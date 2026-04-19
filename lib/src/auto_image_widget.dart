@@ -77,8 +77,8 @@ class AutoImage extends StatefulWidget {
     this.fadeIn = const Duration(milliseconds: 300),
     // Network options
     this.headers,
-    // SVG options
-    this.svgColor,
+    // Tint (SVG, PNG, and other raster formats)
+    this.imageColor,
     // Callbacks
     this.onLoad,
     this.onError,
@@ -141,8 +141,11 @@ class AutoImage extends StatefulWidget {
   /// HTTP headers for network requests (e.g. Authorization)
   final Map<String, String>? headers;
 
-  /// Tint color for SVG images
-  final Color? svgColor;
+  /// Tint color ([BlendMode.srcIn]) for SVG and raster images (PNG, JPEG, WebP, …).
+  ///
+  /// Same behavior as Flutter’s SVG `colorFilter`: opaque pixels take this color;
+  /// transparency is preserved. Best for monochrome icons and masks.
+  final Color? imageColor;
 
   /// Called when image finishes loading successfully
   final VoidCallback? onLoad;
@@ -240,6 +243,16 @@ class _AutoImageState extends State<AutoImage> {
     }
   }
 
+  /// [BlendMode.srcIn] tint for raster ([ColorFiltered]) and SVG.
+  ColorFilter? get _rasterTintFilter =>
+      widget.imageColor != null ? ColorFilter.mode(widget.imageColor!, BlendMode.srcIn) : null;
+
+  Widget _applyRasterTint(Widget child) {
+    final filter = _rasterTintFilter;
+    if (filter == null) return child;
+    return ColorFiltered(colorFilter: filter, child: child);
+  }
+
   Widget _buildNetworkImage() {
     return CachedNetworkImage(
       imageUrl: widget.src,
@@ -271,54 +284,23 @@ class _AutoImageState extends State<AutoImage> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           widget.onLoad?.call();
         });
-        return Image(
-          image: imageProvider,
-          width: widget.width,
-          height: widget.height,
-          fit: widget.fit,
-          alignment: widget.alignment,
+        return _applyRasterTint(
+          Image(
+            image: imageProvider,
+            width: widget.width,
+            height: widget.height,
+            fit: widget.fit,
+            alignment: widget.alignment,
+          ),
         );
       },
     );
   }
 
   Widget _buildAssetImage() {
-    return Image.asset(
-      widget.src,
-      width: widget.width,
-      height: widget.height,
-      fit: widget.fit,
-      alignment: widget.alignment,
-      frameBuilder: _fadeFrameBuilder,
-      errorBuilder: (context, error, stackTrace) {
-        _handleError(error, stackTrace);
-        return _buildLoading(context);
-      },
-    );
-  }
-
-  Widget _buildFileImage() {
-    final path = widget.src.replaceFirst('file://', '');
-    return Image.file(
-      File(path),
-      width: widget.width,
-      height: widget.height,
-      fit: widget.fit,
-      alignment: widget.alignment,
-      frameBuilder: _fadeFrameBuilder,
-      errorBuilder: (context, error, stackTrace) {
-        _handleError(error, stackTrace);
-        return _buildLoading(context);
-      },
-    );
-  }
-
-  Widget _buildBase64Image() {
-    try {
-      final base64Str = widget.src.contains(',') ? widget.src.split(',').last : widget.src;
-      final bytes = base64Decode(base64Str);
-      return Image.memory(
-        bytes,
+    return _applyRasterTint(
+      Image.asset(
+        widget.src,
         width: widget.width,
         height: widget.height,
         fit: widget.fit,
@@ -328,6 +310,45 @@ class _AutoImageState extends State<AutoImage> {
           _handleError(error, stackTrace);
           return _buildLoading(context);
         },
+      ),
+    );
+  }
+
+  Widget _buildFileImage() {
+    final path = widget.src.replaceFirst('file://', '');
+    return _applyRasterTint(
+      Image.file(
+        File(path),
+        width: widget.width,
+        height: widget.height,
+        fit: widget.fit,
+        alignment: widget.alignment,
+        frameBuilder: _fadeFrameBuilder,
+        errorBuilder: (context, error, stackTrace) {
+          _handleError(error, stackTrace);
+          return _buildLoading(context);
+        },
+      ),
+    );
+  }
+
+  Widget _buildBase64Image() {
+    try {
+      final base64Str = widget.src.contains(',') ? widget.src.split(',').last : widget.src;
+      final bytes = base64Decode(base64Str);
+      return _applyRasterTint(
+        Image.memory(
+          bytes,
+          width: widget.width,
+          height: widget.height,
+          fit: widget.fit,
+          alignment: widget.alignment,
+          frameBuilder: _fadeFrameBuilder,
+          errorBuilder: (context, error, stackTrace) {
+            _handleError(error, stackTrace);
+            return _buildLoading(context);
+          },
+        ),
       );
     } catch (e, s) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _handleError(e, s));
@@ -337,8 +358,7 @@ class _AutoImageState extends State<AutoImage> {
 
   Widget _buildSvgImage() {
     final isNetwork = widget.src.startsWith('http');
-    final colorFilter =
-        widget.svgColor != null ? ColorFilter.mode(widget.svgColor!, BlendMode.srcIn) : null;
+    final colorFilter = _rasterTintFilter;
 
     if (isNetwork) {
       return SvgPicture.network(

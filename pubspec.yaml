@@ -1,9 +1,9 @@
 name: auto_image
 description: A smart Flutter image widget that handles network, asset, file, base64, and SVG images with a unified API, caching, shimmer, BlurHash, and more.
-version: 0.0.5
-homepage: https://github.com/ahmedsabry10/omni_image
-repository: https://github.com/ahmedsabry10/omni_image
-issue_tracker: https://github.com/ahmedsabry10/omni_image/issues
+version: 0.1.0
+homepage: https://github.com/ahmedsabry10/auto_image
+repository: https://github.com/ahmedsabry10/auto_image
+issue_tracker: https://github.com/ahmedsabry10/auto_image/issues
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -30,3 +30,13 @@ dev_dependencies:
 
 flutter:
   # No assets needed — pure Dart/Flutter package
+
+screenshots:
+  - description: Asset images, shapes, and transforms
+    path: doc/screenshots/asset.png
+  - description: SVG (asset and network) with imageColor tint
+    path: doc/screenshots/svg.png
+  - description: File and Base64 examples
+    path: doc/screenshots/file_base64.png
+  - description: Network images, blurhash, avatars, and retry
+    path: doc/screenshots/network.png

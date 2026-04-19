@@ -6,13 +6,21 @@ No more switching between `Image.network`, `Image.asset`, `CachedNetworkImage`, 
 
 ## Screenshots
 
-| Asset | SVG |
-|---|---|
-| ![Asset examples](doc/screenshots/asset.png) | ![SVG examples](doc/screenshots/svg.png) |
+### Asset
 
-| File + Base64 | Network |
-|---|---|
-| ![File/Base64 examples](doc/screenshots/file_base64.png) | ![Network examples](doc/screenshots/network.png) |
+![Asset examples](https://raw.githubusercontent.com/ahmedsabry10/auto_image/main/doc/screenshots/asset.png)
+
+### SVG
+
+![SVG examples](https://raw.githubusercontent.com/ahmedsabry10/auto_image/main/doc/screenshots/svg.png)
+
+### File + Base64
+
+![File/Base64 examples](https://raw.githubusercontent.com/ahmedsabry10/auto_image/main/doc/screenshots/file_base64.png)
+
+### Network
+
+![Network examples](https://raw.githubusercontent.com/ahmedsabry10/auto_image/main/doc/screenshots/network.png)
 
 ## Features
 
@@ -38,11 +46,11 @@ No more switching between `Image.network`, `Image.asset`, `CachedNetworkImage`, 
 
 ```yaml
 dependencies:
-  auto_image: ^0.0.5
+  auto_image: ^0.0.7
 ```
 
 ```bash
-flutter pub add omni_image
+flutter pub add auto_image
 ```
 
 ---
@@ -220,7 +228,7 @@ Navigator.push(context, GalleryRoute());
 | `transform` | `ImageTransform?` | null | Visual filters |
 | `fadeIn` | `Duration` | 300ms | Fade animation duration |
 | `headers` | `Map<String,String>?` | null | HTTP headers |
-| `svgColor` | `Color?` | null | SVG tint color |
+| `imageColor` | `Color?` | null | Tint (SVG + raster: PNG, JPEG, …); `BlendMode.srcIn` |
 | `onLoad` | `VoidCallback?` | null | Called when loaded |
 | `onError` | `ErrorCallback?` | null | Called on error |
 | `onProgress` | `ProgressCallback?` | null | Download progress |
